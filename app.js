@@ -1,20 +1,23 @@
 // app.js
-require('dotenv').config(); // Carga las variables de entorno
-const express = require('express'); 
+require('dotenv').config();
+const express = require('express');
 const cors = require('cors');
 const banguatService = require('./services/ServiceBanguat');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware para parsear JSON
-app.use(express.json()); 
+app.use(express.json());
 
+// --- ESTE ES EL CAMBIO IMPORTANTE ---
+const corsOptions = {
+  // Usamos una variable de entorno para la URL del frontend.
+  // Si no está definida, se usa '*', lo cual es útil para pruebas iniciales.
+  origin: process.env.FRONTEND_URL || '*'
+};
 
-// Permitir peticiones desde tu frontend
-app.use(cors({
-  origin: 'http://localhost:5173'  // o '*' para todos
-}));
+app.use(cors(corsOptions));
+// ------------------------------------
 
 // Ruta para obtener el tipo de cambio del día
 app.get('/api/v1/tipo-cambio/dia', async (req, res) => {
@@ -42,5 +45,4 @@ app.get('/', (req, res) => {
 // Iniciar el servidor
 app.listen(PORT, () => {
     console.log(`Servidor API REST escuchando en el puerto ${PORT}`);
-    console.log(`Accede a http://localhost:${PORT}`);
 });
