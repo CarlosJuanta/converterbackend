@@ -2,14 +2,21 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const banguatService = require('./services/ServiceBanguat');
+const cookieParser = require('cookie-parser');  //añadido lector de Cookies 
 
+//importar servicios mapas de rutas
+
+const authRoutes = require ('./routes/auth.routes');
+const converterRoutes = require ('./routes/converter.routes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
 
-// --- ESTE ES EL CAMBIO IMPORTANTE ---
+// --- Configuración de Middlewares (Herramientas que se usan en TODAS las peticiones) ---
+app.use(express.json()); //permite a Exprrres entender el fomrato JSON en las petiticones
+app.use(cookieParser()); //activa el lector de cookes
+
+// --- configuración del CORS  para permitir la comunicación  con el frontend
 const corsOptions = {
   // Usamos una variable de entorno para la URL del frontend.
   // Si no está definida, se usa '*', lo cual es útil para pruebas iniciales.
@@ -19,30 +26,25 @@ const corsOptions = {
 app.use(cors(corsOptions));
 // ------------------------------------
 
-// Ruta para obtener el tipo de cambio del día
-app.get('/api/v1/tipo-cambio/dia', async (req, res) => {
-    try {
-        const data = await banguatService.getTipoCambioDia();
-        res.json({
-            success: true,
-            message: 'Tipo de cambio del día obtenido correctamente.',
-            data: data
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Error interno del servidor al obtener el tipo de cambio del día.'
-        });
-    }
+// --- Conectamos los mapas a la aplicación principal ---
+// Le decimos a Express: "Si una URL empieza con /api/v1/auth, usa el mapa 'authRoutes'".
+app.use('/api/v1/auth', authRoutes);
+
+// Le decimos: "Si una URL empieza con /api/v1/tipo-cambio, usa el mapa 'converterRoutes'".
+app.use('/api/v1/tipo-cambio', converterRoutes);
+
+
+
+
+//Rutas  por defecto para saber que la API está viva
+
+app.get ('/', (req, res)=> {
+    res.send('API REST para el banco de Guatemala con autenticación');
 });
 
-// Ruta por defecto
-app.get('/', (req, res) => {
-    res.send('API REST para el Banco de Guatemala. Visita /api/v1/tipo-cambio/dia o /api/v1/tipo-cambio/rango');
-});
+//iniciar el servidor 
 
-// Iniciar el servidor
-app.listen(PORT, () => {
+app.listen(PORT,() => {
     console.log(`Servidor API REST escuchando en el puerto ${PORT}`);
-});
+    console.log ('El sistema de autenticación está listo y activo!');
+})
