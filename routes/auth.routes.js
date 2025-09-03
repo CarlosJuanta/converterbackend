@@ -1,5 +1,5 @@
 const express = require ("express");
-const {register, login, verifyToken, logout}= require ('../controllers/auth.controller');
+const {register, login, verifyToken, logout, refreshToken}= require ('../controllers/auth.controller');
 const router = express.Router();
 
 
@@ -30,6 +30,11 @@ router.get('/verify', authMiddleware, verifyToken);
 
 
 //RUTA PARA CERRAR SESIÓN 
-router.post ('/logout', logout);
+router.post ('/logout', logout); 
+
+
+//
+// Ruta para renovar el token: POST /api/v1/auth/refresh
+router.post('/refresh', authMiddleware, refreshToken);
 
 module.exports =router;

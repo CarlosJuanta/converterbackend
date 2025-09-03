@@ -48,55 +48,57 @@ const register  = async (req, res) => {
 // FUNCIÓN PARA INICIAR SESIÓN
 // ===================================================================
 const login = async (req, res) => {
-   try {
+    try {
+        const { username, password } = req.body;
 
-    //obtener usuario y contraseña
+        const result = await db.execute({
+            sql: "SELECT * FROM users WHERE username = ?",
+            args: [username]
+        });
 
-    const {username, password} = req.body;
+        if (result.rows.length === 0) {
+            return res.status(400).json({ message: "Credenciales inválidas." });
+        }
+        const user = result.rows[0];
 
-     //buscar al usario en la base de datos 
-     const result = await db.execute ({
-        sql: "SELECT * FROM users WHERE username= ?",
-        args: [username]
-     });
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Credenciales inválidas." });
+        }
 
+        const payload = { id: user.id, username: user.username };
 
-     //si no se encuentra al usuario las credenciales son incorrectas 
-     if (result.rows.length === 0) {
-        return res.status(400).json ({message: "credenciales inválidadas."});
-     }
-     const user = result.rows[0];
+        // ===================================================================
+        // ===== INICIO DE LA MODIFICACIÓN =====
+        // ===================================================================
+        const expiresInSeconds = 3 * 60; // 3 minutos en segundos
+        const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
+            expiresIn: expiresInSeconds
+        });
 
+        // Calculamos el timestamp de expiración en MILISEGUNDOS (importante para JavaScript)
+        const expirationTime = Date.now() + (expiresInSeconds * 1000);
+        // ===================================================================
+        // ===== FIN DE LA MODIFICACIÓN =====
+        // ===================================================================
 
-    //comparar la contraseña enviada con la que está guardada  y encriptada en la BD
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch){
-        return res.status (400).json ({message: "credenciales inválidas"});
-    }
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+        });
 
-    // si todo es correcto
-    const payload = {id: user.id, username: user.username};
-    const token= jwt.sign(payload, process.env.JWT_SECRET_KEY, {
-        expiresIn: '3m'
-    });
-
-    //se envia el token al cliente dentro de una cooke segura
-
-    res.cookie ('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-    });
-
-    res.status(200).json ({message: "Inicio de sesión exitoso. " });
+        // ¡Aquí enviamos la respuesta JSON que el frontend espera!
+        res.status(200).json({
+            message: "Inicio de sesión exitoso.",
+            expiresAt: expirationTime // <-- ¡La pieza que faltaba!
+        });
 
     } catch (error) {
-        console.error ("Error en el login ", error);
-        res.status (500).json({message: "Error en el servidor al iniciar sesión.  "});
-
+        console.error("Error en el login ", error);
+        res.status(500).json({ message: "Error en el servidor al iniciar sesión." });
     }
 };
-
 
 // FUNCIÓN PARA VERIFICAR EL TOKEN ACTUAL
 const verifyToken = (req, res) => {
@@ -116,9 +118,36 @@ const logout = (req, res) => {
 };
 
 
+
+//RENOVACIÓN DE TOKEN 
+
+// FUNCIÓN PARA RENOVAR EL TOKEN (REFRESH)
+const refreshToken = (req, res) => {
+  // Si el middleware 'authMiddleware' nos dejó pasar, significa que el token actual es válido.
+  // La información del usuario está en 'req.user'.
+  
+  // 1. Creamos un payload exactamente igual al del login.
+  const payload = { id: req.user.id, username: req.user.username };
+
+  // 2. Creamos un token NUEVO con una nueva fecha de expiración de 3 minutos.
+  const token = jwt.sign(payload, process.env.JWT_SECRET_KEY, {
+      expiresIn: '3m'
+  });
+
+  // 3. Enviamos el nuevo token en la cookie, reemplazando al antiguo.
+  res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+  });
+
+  res.status(200).json({ message: "Token renovado exitosamente." });
+};
+
 module.exports = {
     register,
     login,
     verifyToken,
-    logout
+    logout,
+    refreshToken
 };
