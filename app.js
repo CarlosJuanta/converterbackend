@@ -2,49 +2,51 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const cookieParser = require('cookie-parser');  //añadido lector de Cookies 
+const cookieParser = require('cookie-parser');
 
-//importar servicios mapas de rutas
-
-const authRoutes = require ('./routes/auth.routes');
-const converterRoutes = require ('./routes/converter.routes');
+// Importar servicios mapas de rutas
+const authRoutes = require('./routes/auth.routes');
+const converterRoutes = require('./routes/converter.routes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// --- Configuración de Middlewares ---
+app.use(express.json());
+app.use(cookieParser());
 
-// --- Configuración de Middlewares (Herramientas que se usan en TODAS las peticiones) ---
-app.use(express.json()); //permite a Exprrres entender el fomrato JSON en las petiticones
-app.use(cookieParser()); //activa el lector de cookes
+// ===================================================================
+// ===== INICIO DE LA MODIFICACIÓN =====
+// ===================================================================
 
-// --- configuración del CORS  para permitir la comunicación  con el frontend
+// --- Configuración del CORS para permitir la comunicación con el frontend ---
 const corsOptions = {
-  // Usamos una variable de entorno para la URL del frontend.
-  // Si no está definida, se usa '*', lo cual es útil para pruebas iniciales.
-  origin: process.env.FRONTEND_URL || '*'
+  // Cuando trabajas con credenciales (cookies), debes especificar el origen exacto.
+  // El comodín '*' no está permitido por razones de seguridad.
+  // Leemos la URL del frontend desde el archivo .env, y si no existe, usamos la de desarrollo local.
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  
+  // ¡ESTA ES LA LÍNEA CLAVE QUE SOLUCIONA TU ERROR!
+  // Le dice al navegador que este servidor SÍ acepta peticiones con credenciales (cookies).
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
-// ------------------------------------
+
+// ===================================================================
+// ===== FIN DE LA MODIFICACIÓN =====
+// ===================================================================
 
 // --- Conectamos los mapas a la aplicación principal ---
-// Le decimos a Express: "Si una URL empieza con /api/v1/auth, usa el mapa 'authRoutes'".
 app.use('/api/v1/auth', authRoutes);
-
-// Le decimos: "Si una URL empieza con /api/v1/tipo-cambio, usa el mapa 'converterRoutes'".
 app.use('/api/v1/tipo-cambio', converterRoutes);
 
-
-
-
-//Rutas  por defecto para saber que la API está viva
-
-app.get ('/', (req, res)=> {
+// Ruta por defecto para saber que la API está viva
+app.get('/', (req, res) => {
     res.send('API REST para el banco de Guatemala con autenticación');
 });
 
-//iniciar el servidor 
-
-app.listen(PORT,() => {
+// Iniciar el servidor 
+app.listen(PORT, () => {
     console.log(`Servidor API REST escuchando en el puerto ${PORT}`);
-    console.log ('El sistema de autenticación está listo y activo!');
-})
+    console.log('El sistema de autenticación está listo y activo!');
+});

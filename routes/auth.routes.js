@@ -1,5 +1,5 @@
 const express = require ("express");
-const {register, login }= require ('../controllers/auth.controller');
+const {register, login, verifyToken, logout}= require ('../controllers/auth.controller');
 const router = express.Router();
 
 
@@ -18,6 +18,18 @@ router.post('/register', register);
 
 router.post ('/login', login);
 
-//Exportamos este mapa para que nuestra aplicación principal pueda usarlo.
+//Exportamos este mapa para que nuestra aplicación principal pueda usarlo. 
+
+// ... (después de las rutas de register y login) ...
+const authMiddleware = require('../middlewares/auth.middleware');
+
+// Ruta para verificar el token: GET /api/v1/auth/verify
+// Usamos el guardia ANTES de llegar al controlador.
+router.get('/verify', authMiddleware, verifyToken);
+
+
+
+//RUTA PARA CERRAR SESIÓN 
+router.post ('/logout', logout);
 
 module.exports =router;

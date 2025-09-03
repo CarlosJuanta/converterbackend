@@ -97,7 +97,28 @@ const login = async (req, res) => {
     }
 };
 
+
+// FUNCIÓN PARA VERIFICAR EL TOKEN ACTUAL
+const verifyToken = (req, res) => {
+  // Si el middleware 'authMiddleware' nos dejó pasar, significa que el token es válido.
+  // La información del usuario ya fue añadida a 'req.user' por el middleware.
+  res.status(200).json({ 
+    message: "Token válido.", 
+    user: req.user 
+  });
+};
+ 
+
+//FUNCIÓN PARA CERRAR SESIÓN 
+const logout = (req, res) => {
+    res.clearCookie ('token');
+    res.status(200).json({message: "Sesión cerrada exitosamente. "});
+};
+
+
 module.exports = {
     register,
-    login
+    login,
+    verifyToken,
+    logout
 };
