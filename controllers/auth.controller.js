@@ -35,7 +35,7 @@ const register  = async (req, res) => {
 
 } catch (error) {
     if (error.message && error.message.includes ("UNIQUE constraint failed")) {
-        return res.status (409).json ({message: "El nobre del susuario ya existe"});
+        return res.status (409).json ({message: "El nombre del usuario ya existe"});
     }
     //para cualquier otro caso
     console.error ("Erros en el registro: ", error);
