@@ -23,7 +23,7 @@ const corsOptions = {
   // Cuando trabajas con credenciales (cookies), debes especificar el origen exacto.
   // El comodín '*' no está permitido por razones de seguridad.
   // Leemos la URL del frontend desde el archivo .env, y si no existe, usamos la de desarrollo local.
-  origin: process.env.FRONTEND_URL || 'https://convertidorqtz.netlify.app/login',
+  origin: process.env.FRONTEND_URL || 'https://convertidorqtz.netlify.app',
   
   // ¡ESTA ES LA LÍNEA CLAVE QUE SOLUCIONA TU ERROR!
   // Le dice al navegador que este servidor SÍ acepta peticiones con credenciales (cookies).
